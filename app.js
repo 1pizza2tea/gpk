@@ -147,7 +147,7 @@ bot.command ( 'start',
 
             eventEmitter.on('error', (err) => {             // обработка блокировки юзером
                 console.log(err.error_code);
-                eventEmitter.removeListener ('result_changed',listener);   // убираем слушатель
+                eventEmitter.removeListener ('result_changed',listener);   
                 console.log(eventEmitter.listenerCount('result_changed')); // проверка что убран=0
                 ctx.session.last_command='x';                               //меняем команду в сессии
             });
