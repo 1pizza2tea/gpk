@@ -24,11 +24,15 @@ const bot = new Bot (process.env.BOT_API_KEY);
 
 let url = 'https://gpk.gov.by/situation-at-the-border/punkty-propuska/brest/';
 let result = null;
+let h = new Date().getHours();        //12
+let m = new Date().getMinutes();      //15
 
 //------------вычисляем время до ближ запуска-------------
+
+
+
 function start_time(){
-    let h = new Date().getHours();        //12
-    let m = new Date().getMinutes();      //15
+
     let time_before_start_scrapper = 0;
 
     if(h %2 !== 0 ) {
@@ -45,23 +49,48 @@ function start_time(){
     return time_before_start_scrapper;
 }
 
+
+
+
+function repeat_time(){
+
+    let time_before_repeat_scrapper = 10;
+
+    if(h %2 !== 0 ) {
+        time_before_repeat_scrapper = start_time();      //если нечетное время то перенос на х.15
+    }
+
+    else if(h %2==0 && m < 15) {
+        time_before_repeat_scrapper = start_time();
+    }
+
+    else if(h %2==0 && m >= 50) {
+        time_before_repeat_scrapper = start_time();
+    }
+
+    else if (h %2==0 && m >= 15) {
+        time_before_repeat_scrapper =10;
+    }
+    return time_before_repeat_scrapper;
+}
+
 //------запускаем парсер в ближ четный (час.15) -----------------
 
-function timer() {
-    console.log('запуск состоится через '+start_time());
+// function timer() {
+//     console.log('запуск состоится через '+start_time());
 
-    setTimeout(()=>{
-        line_data(url)
-    }, 60*1000* start_time() )
-}
-timer();
+//     setTimeout(()=>{
+//         line_data(url)
+//     }, 60*1000* start_time() )
+// }
+// timer();
 
 //-------------парсер-------------------------------------------
 
 async function line_data(url) {
     const browser = await puppeteer.launch({ headless: true });
     const page = await browser.newPage();
-    page.setDefaultTimeout(0);                           // отключаем дефолт таймаут
+    page.setDefaultTimeout(60000);                           // отключаем дефолт таймаут
 
     console.log('code started...going to url..'+ new Date().toLocaleTimeString());
 try{
@@ -107,21 +136,26 @@ try{
         console.log('час полученных данных: '+date.slice(11,13));                       //12
         console.log('текущий час:           '+new Date().getHours());                   //12
         console.log('данные не свежие, закрываю браузер '+ new Date().toLocaleTimeString());
-        console.log(`новый запуск через 10 мин`);
+        console.log(`новый запуск через `+ repeat_time());
         await browser.close();
 
         setTimeout(() => {
             line_data(url)
-        }, 10 *60*1000)                                              // перезапуск через 10
+        }, repeat_time() *60*1000)                                              // перезапуск через x
     }
 }
 catch (error){
-    console.log(error);
-    
+    console.log('Catched: '+error);
+    await browser.close();
+
+    setTimeout(() => {
+        line_data(url)
+    }, repeat_time() *60*1000)
+
 }
 }
 
-//line_data(url);
+line_data(url);
 
 
 //--------скрипт бота-----сессия--------------
