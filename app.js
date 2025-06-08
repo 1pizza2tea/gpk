@@ -64,7 +64,7 @@ async function line_data(url) {
     page.setDefaultTimeout(0);                           // отключаем дефолт таймаут
 
     console.log('code started...going to url..'+ new Date().toLocaleTimeString());
-
+try{
     await page.goto(url);
     await page
         .waitForSelector('div.queuesNow')
@@ -114,7 +114,11 @@ async function line_data(url) {
             line_data(url)
         }, 10 *60*1000)                                              // перезапуск через 10
     }
-
+}
+catch (error){
+    console.log(error);
+    
+}
 }
 
 //line_data(url);
