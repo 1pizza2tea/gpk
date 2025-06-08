@@ -147,7 +147,7 @@ bot.command ( 'start',
 
             eventEmitter.on('error', (err) => {             // обработка блокировки юзером
                 console.log(err.error_code);
-                eventEmitter.removeListener ('result_changed',listener);   
+                eventEmitter.removeListener ('result_changed',listener);
                 console.log(eventEmitter.listenerCount('result_changed')); // проверка что убран=0
                 ctx.session.last_command='x';                               //меняем команду в сессии
             });
@@ -180,9 +180,9 @@ bot.catch((err) => {
 
 bot.start();
 
+//https://github.com/1pizza2tea/gpk.git
 
-
-/*
+/*git
 
 // bot.on("my_chat_member", async(ctx)=> {
 //     ctx.session.status = (ctx.myChatMember.new_chat_member.status)                       //вносим статус в session
