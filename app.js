@@ -24,15 +24,15 @@ const bot = new Bot (process.env.BOT_API_KEY);
 
 let url = 'https://gpk.gov.by/situation-at-the-border/punkty-propuska/brest/';
 let result = null;
-let h = new Date().getHours();        //12
-let m = new Date().getMinutes();      //15
+
 
 //------------вычисляем время до ближ запуска-------------
 
 
 
 function start_time(){
-
+    let h = new Date().getHours();        //12
+    let m = new Date().getMinutes();      //15
     let time_before_start_scrapper = 0;
 
     if(h %2 !== 0 ) {
@@ -54,6 +54,8 @@ function start_time(){
 
 function repeat_time(){
 
+    let h = new Date().getHours();        //12
+    let m = new Date().getMinutes();      //15
     let time_before_repeat_scrapper = 10;
 
     if(h %2 !== 0 ) {
@@ -90,7 +92,7 @@ function repeat_time(){
 async function line_data(url) {
     const browser = await puppeteer.launch({ headless: true });
     const page = await browser.newPage();
-    page.setDefaultTimeout(60000);                           // отключаем дефолт таймаут
+    page.setDefaultTimeout(180000);                           // отключаем дефолт таймаут
 
     console.log('code started...going to url..'+ new Date().toLocaleTimeString());
 try{
@@ -133,8 +135,8 @@ try{
 
 
     } else {
-        console.log('час полученных данных: '+date.slice(11,13));                       //12
-        console.log('текущий час:           '+new Date().getHours());                   //12
+        // console.log('час полученных данных: '+date.slice(11,13));                       //12
+        // console.log('текущий час:           '+new Date().getHours());                   //12
         console.log('данные не свежие, закрываю браузер '+ new Date().toLocaleTimeString());
         console.log(`новый запуск через `+ repeat_time());
         await browser.close();
@@ -151,6 +153,9 @@ catch (error){
     setTimeout(() => {
         line_data(url)
     }, repeat_time() *60*1000)
+
+    console.log('повтор запуска через '+repeat_time());
+
 
 }
 }
