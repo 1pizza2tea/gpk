@@ -78,14 +78,14 @@ function repeat_time(){
 
 //------запускаем парсер в ближ четный (час.15) -----------------
 
-// function timer() {
-//     console.log('запуск состоится через '+start_time());
+function timer() {
+    console.log('запуск состоится через '+start_time());
 
-//     setTimeout(()=>{
-//         line_data(url)
-//     }, 60*1000* start_time() )
-// }
-// timer();
+    setTimeout(()=>{
+        line_data(url)
+    }, 60*1000* start_time() )
+}
+timer();
 
 //-------------парсер-------------------------------------------
 
@@ -155,8 +155,6 @@ catch (error){
     }, repeat_time() *60*1000)
 
     console.log('повтор запуска через '+repeat_time());
-
-
 }
 }
 
@@ -222,46 +220,3 @@ bot.catch((err) => {
   });
 
 bot.start();
-
-//https://github.com/1pizza2tea/gpk.git
-
-/*git
-
-// bot.on("my_chat_member", async(ctx)=> {
-//     ctx.session.status = (ctx.myChatMember.new_chat_member.status)                       //вносим статус в session
-
-    // let user_name = ctx.myChatMember.from.first_name;
-    // let bot_name =ctx.me.first_name;
-    // let reply = `Привет, ${user_name}, меня зовут ${bot_name}, приятно познакомиться)`;
-    // await ctx.reply(ctx.session.status)
-
-// function timer() {
-//     setInterval(()=> {
-
-//         line_data();
-
-
-
-//     },1111111111 )
-// }
-
-// (function timer() {
-//     setInterval(() => {
-//        result  = new Date();
-
-//        eventEmitter.emit('result_changed');
-//     }, 5000)
-// })();
-
-
-*/
-/*
-let arr = Array.from(document.querySelector('.search-result-block').children);
-arr.forEach((item) => {
-    console.log(item.dataset.free_seats_info)})
-
-*/
-   // console.log('page opened, waiting for coockie........');
-    // const coockie =  page.locator('#js-cookie-alert-close');
-    // await coockie.click();
-    // console.log('cockie accepted');
