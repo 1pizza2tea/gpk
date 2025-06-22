@@ -90,7 +90,7 @@ timer();
 //-------------парсер-------------------------------------------
 
 async function line_data(url) {
-    const browser = await puppeteer.launch({ headless: true });
+    const browser = await puppeteer.launch({ headless: true, args:['--no-sandbox'] });
     const page = await browser.newPage();
     page.setDefaultTimeout(180000);                           // отключаем дефолт таймаут
 
@@ -123,7 +123,7 @@ try{
         await browser.close();
 
         result =  `${ await date} ${await cars} ${ await buses}`;
-        console.log(result);
+       // console.log(result);
 
         eventEmitter.emit('result_changed')
         console.log(`новый запуск через  ${start_time()}`);
