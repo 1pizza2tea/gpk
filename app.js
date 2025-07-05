@@ -9,9 +9,8 @@ import { Bot, session } from "grammy";
 //импорт классов для обр ошибок:
 import { GrammyError, HttpError } from "grammy";
 
-import EventEmitter from 'node:events';       //
-
-const eventEmitter = new EventEmitter({ captureRejections: true });
+// import EventEmitter from 'node:events';
+// const eventEmitter = new EventEmitter({ captureRejections: true });
 
 // Создаем своего бота на основе импортированного класса, передавая
 // в качестве аргумента ссылку на  токен  из файла .env :
@@ -24,9 +23,11 @@ const bot = new Bot(process.env.BOT_API_KEY);
 
 let url = 'https://gpk.gov.by/situation-at-the-border/punkty-propuska/brest/';
 let result = null;
+let data_hour_marker = null;
 
 
-//------------вычисляем время до ближ запуска-------------
+//------------вычисляем время до ближ стандартного запуска-------------
+//стандартный запуск = каждые 2 часа+ 15 минут:  12.20, 14.20, 16.20 ....итд
 
 function start_time() {
     let h = new Date().getHours();                            //12
@@ -47,7 +48,9 @@ function start_time() {
     return time_before_start_scrapper;
 }
 
-
+//------------вычисляем время до повторного запуска в случае необходимости-------------
+//повторный запуск через 10 минут после стандартного, если он неуспешен, после 5 повторных переходим
+//в следющий стандартный
 function repeat_time() {
 
     let h = new Date().getHours();                           //12
@@ -72,16 +75,15 @@ function repeat_time() {
     return time_before_repeat_scrapper;
 }
 
-//------запускаем парсер в ближ четный (час.15) -----------------
+//------запускаем парсер в по стандартному запуску -----------------
 
-function timer() {
+(function timer() {
     console.log('запуск состоится через ' + start_time());
 
     setTimeout(() => {
         line_data(url)
     }, 60 * 1000 * start_time())
-}
-timer();
+})()
 
 //-------------парсер-------------------------------------------
 
@@ -121,24 +123,20 @@ async function line_data(url) {
 
             await browser.close();
 
-            result = `По состоянию на <b>*${await date}*</b>
+            result = `На <b>${await date}</b>
 в электронной очереди из РБ в РП до заезда на терминал зарегистрировано:
 
-    автомобилей: <b>*${await cars}*</b>
-    автобусов:       <b>*${await buses}*</b>
+    автомобилей: <b>${await cars}</b>
+    автобусов:       <b>${await buses}</b>
 
 <i>Данные обновляются каждые 2 часа</i>`;
 
-
             // console.log(result);
-
-            eventEmitter.emit('result_changed')
-            console.log(`ближ. запуск через  ${start_time()}`);
+            //console.log(`ближ. запуск через  ${start_time()}`);
 
             setTimeout(() => {
                 line_data(url);
             }, 60 * 1000 * start_time())
-
 
         } else {
             // console.log('час полученных данных: '+date.slice(11,13));                       //12
@@ -174,33 +172,81 @@ function initial() {
 bot.use(session({ initial }));
 
 //----------бот------------------
+//счетчик времени до стандартного запуска каждый 2й четный час+ 20 минут
+//то есть через 5 минут после парсера
+function bot_start_time(){
+    let h = new Date().getHours();        //12
+    let m = new Date().getMinutes();      //20
+    let time_before_start_bot = 0;
+
+    if(h %2 !== 0 ) {
+        time_before_start_bot = ((60- m + 20));        //13-30>>>14-20
+    }
+    else if(h %2==0 && m < 20) {
+        time_before_start_bot = (20 - m);             //14-10      >>  14-20
+    }
+    else if (h %2==0 && m >= 20) {
+        time_before_start_bot =(60 - m +60 + 20);     // 14-30  >>   16-20
+    }
+    return time_before_start_bot;
+}
+//счетчик времени для повтора каждые 10 минут в случае несвежих данных от парсера
+function bot_repeat_time(){
+    let h = new Date().getHours();        //12
+    let m = new Date().getMinutes();      //15
+    let time_before_repeat_bot = 10;
+
+    if (h %2==0 && m>15 && m<= 45) {
+        time_before_repeat_bot =10;
+    }
+   else if(h %2==0 && m > 45) {
+        time_before_repeat_bot = bot_start_time
+    }
+    else if(h %2==0 && m < 15) {
+        time_before_repeat_bot = 20-m;
+    }
+    else if(h %2 !== 0 ) {
+        time_before_repeat_bot = bot_start_time();      //если нечетное время то перенос на х.15
+    }
+    return time_before_repeat_bot;
+}
 
 bot.command('start',
     async (ctx) => {
         if (ctx.message.text !== ctx.session.last_command) {               // если старт не равно сессии
             ctx.session.last_command = ctx.message.text;                 //то кладем старт в сессию
 
-            await ctx.reply('bot started....' + new Date().toLocaleTimeString())
-            let g_ctx = ctx;
+            await ctx.reply('ГПК: обновление данных через '+bot_start_time()+' мин')
+            setTimeout(send_result, 60 *1000 * bot_start_time() )
 
-            let listener = async function () {     // ф слушатель
-                await g_ctx.reply(result, {
-                    parse_mode: 'HTML'
-                })
-            }
+                        async function send_result () {
+                                let h = new Date().getHours();        //12 час сейчас
+                                if (h == data_hour_marker){           //проверка свежести result h = 12?
 
-            eventEmitter.on('result_changed', listener)    //ждем сигнал
+                                    try{
+                                        await ctx.reply (result, {
+                                        parse_mode: 'HTML'})
+                                        setTimeout(send_result,60*1000*bot_start_time())
+                                    }
+                                    catch(error){
+                                        console.log(error);
 
-            eventEmitter.on('error', (err) => {             // обработка блокировки юзером
-                console.log(err);
-                eventEmitter.removeListener('result_changed', listener);
-                console.log(eventEmitter.listenerCount('result_changed')); // проверка что убран=0
-                ctx.session.last_command = 'x';                               //меняем команду в сессии
-            });
+                                        if(error.error_code==403){
+                                            console.log(error.error_code);
+                                            ctx.session.last_command='x';
+                                        } else {
+                                            console.log(error.error_code);
+                                            setTimeout(send_result,60*1000*bot_repeat_time())
+                                        }
+                                    };
 
+                                } else {
+                                    setTimeout(send_result, 60 *1000* bot_repeat_time() )
+                                }
+                        }
         }
         else {
-            ctx.reply('бот уже запущен');
+            ctx.reply('stop fucking pressing, I am working...');
             return
         }                                                      //= если старт снова то выход
     }
